@@ -1,0 +1,9 @@
+flask
+python-dotenv
+fastf1
+flask-cors
+flask-caching
+flask-limiter
+pytest
+pandas
+numpy

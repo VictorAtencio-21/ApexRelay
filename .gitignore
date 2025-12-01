@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# FastF1 cache
+fastf1_cache/
+
+# Environment variables / secrets
+.env
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# pytest cache
+.pytest_cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
