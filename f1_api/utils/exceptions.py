@@ -5,11 +5,11 @@ class APIError(Exception):
 
     status_code = 400
 
-    def __init__(self, message: str, status_code: int | None = None):
+    def __init__(self, message: str, status_code: int | None = None, code: str | None = None):
         super().__init__(message)
         if status_code is not None:
             self.status_code = status_code
         self.message = message
-
+        self.code = code
     def to_dict(self) -> dict:
         return {"error": self.message}
