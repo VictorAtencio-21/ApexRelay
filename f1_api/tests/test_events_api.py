@@ -42,6 +42,15 @@ def test_get_season_events(client):
     assert isinstance(data["events"], list)
 
 
+def test_seasons_rejects_unexpected_query_params(client):
+    resp = client.get("/api/v1/events/seasons?foo=bar")
+
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["error"]["code"] == "invalid_query_params"
+    assert "unexpected" in data["error"].get("details", {})
+
+
 def test_get_event_with_sessions(client):
     # Get seasons and choose a year
     seasons_resp = client.get("/api/v1/events/seasons")
