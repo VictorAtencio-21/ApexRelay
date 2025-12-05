@@ -21,6 +21,22 @@ def _to_seconds(value) -> float | None:
     return float(value.total_seconds())
 
 
+def _safe_str(value) -> str | None:
+    """Return a plain string for a value or ``None`` if it is missing."""
+    if value is None:
+        return None
+
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        # pd.isna() raises for certain non-numeric or array-like objects; treat
+        # them as-is and fall through to string conversion.
+        pass
+
+    return str(value)
+
+
 def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, Any]:
     """
     Build a lap-based replay dataset for a session.
@@ -48,9 +64,9 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
                 "year": year,
                 "round": round_,
                 "session_code": session_code,
-                "event_name": session.event["EventName"],
-                "country": session.event["Country"],
-                "location": session.event["Location"],
+                "event_name": _safe_str(session.event.get("EventName")),
+                "country": _safe_str(session.event.get("Country")),
+                "location": _safe_str(session.event.get("Location")),
             },
             "drivers": [],
             "timeline": [],
@@ -60,12 +76,15 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
     drivers_meta: list[dict[str, Any]] = []
     for drv_number in session.drivers:
         info = session.get_driver(drv_number)
+        first_name = _safe_str(info.get("FirstName"))
+        last_name = _safe_str(info.get("LastName"))
+
         drivers_meta.append(
             {
-                "driver_id": str(drv_number),
-                "code": str(info["Abbreviation"]),
-                "name": f"{info['FirstName']} {info['LastName']}",
-                "team": str(info["TeamName"]),
+                "driver_id": _safe_str(drv_number),
+                "code": _safe_str(info.get("Abbreviation")),
+                "name": " ".join(part for part in (first_name, last_name) if part),
+                "team": _safe_str(info.get("TeamName")),
             }
         )
 
@@ -87,7 +106,7 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
         leader_time_s = _to_seconds(leader_time)
 
         driver_timings: list[dict[str, Any]] = []
-        prev_time_s = leader_time_s
+        prev_time_s = None
 
         # Iterate over each driver's row for this lap
         for _, row in group.iterrows():
@@ -106,8 +125,8 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
 
             driver_timings.append(
                 {
-                    "driver_id": str(row.get("DriverNumber")),
-                    "driver_code": str(row.get("Driver")),
+                    "driver_id": _safe_str(row.get("DriverNumber")),
+                    "driver_code": _safe_str(row.get("Driver")),
                     "position": int(row["Position"])
                     if "Position" in row and not pd.isna(row["Position"])
                     else None,
@@ -117,7 +136,7 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
                 }
             )
 
-            prev_time_s = end_time_s
+            prev_time_s = end_time_s if end_time_s is not None else prev_time_s
 
         timeline.append(
             {
@@ -131,9 +150,9 @@ def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, A
             "year": year,
             "round": round_,
             "session_code": session_code,
-            "event_name": session.event["EventName"],
-            "country": session.event["Country"],
-            "location": session.event["Location"],
+            "event_name": _safe_str(session.event.get("EventName")),
+            "country": _safe_str(session.event.get("Country")),
+            "location": _safe_str(session.event.get("Location")),
         },
         "drivers": drivers_meta,
         "timeline": timeline,
