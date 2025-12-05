@@ -8,6 +8,8 @@ from typing import Any
 import fastf1
 import pandas as pd
 
+from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
+
 
 def get_current_and_previous_seasons() -> list[int]:
     """
@@ -25,10 +27,17 @@ def get_season_events(year: int) -> list[dict[str, Any]]:
     Returns a list of simplified event dicts that your frontend can consume.
     """
     # This returns an EventSchedule (pandas DataFrame)
-    schedule = fastf1.get_event_schedule(
-        year,
-        include_testing=False,  # ignore preseason / test events for now
-    )
+    try:
+        schedule = fastf1.get_event_schedule(
+            year,
+            include_testing=False,  # ignore preseason / test events for now
+        )
+    except Exception as exc:
+        raise APIError(
+            f"Unable to load schedule for {year}",
+            status_code=502,
+            code=DEFAULT_ERROR_CODES.get(502),
+        ) from exc
 
     events: list[dict[str, Any]] = []
 

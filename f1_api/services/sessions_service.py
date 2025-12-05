@@ -7,6 +7,8 @@ from typing import Any
 import fastf1
 import pandas as pd
 
+from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
+
 
 # Map human-readable session names from FastF1 → short codes we will use in URLs
 SESSION_NAME_TO_CODE = {
@@ -38,7 +40,14 @@ def get_event_with_sessions(year: int, round_: int) -> dict[str, Any]:
     This uses fastf1.get_event(year, round_), which returns something like
     a single row of the schedule (pandas Series).
     """
-    event = fastf1.get_event(year, round_)
+    try:
+        event = fastf1.get_event(year, round_)
+    except Exception as exc:
+        raise APIError(
+            f"Unable to load event for {year} round {round_}",
+            status_code=404,
+            code=DEFAULT_ERROR_CODES.get(404),
+        ) from exc
 
     base = {
         "year": int(year),

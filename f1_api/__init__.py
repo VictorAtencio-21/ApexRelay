@@ -1,9 +1,11 @@
 # f1_api/__init__.py
-from flask import Flask
+from flask import Flask, jsonify
+from werkzeug.exceptions import HTTPException
+from flask_limiter.errors import RateLimitExceeded
 
 from .config import get_config
 from .extensions import cors, cache, limiter
-from .utils.exceptions import APIError
+from .utils.exceptions import APIError, DEFAULT_ERROR_CODES
 
 # Route blueprints
 from .api.v1.races_routes import races_bp
@@ -40,8 +42,40 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(sessions_bp, url_prefix="/api/v1/sessions")
 
     # Register error handlers
+    def _response(err: APIError):
+        return jsonify(err.to_dict()), err.status_code
+
+    @app.errorhandler(RateLimitExceeded)
+    def handle_rate_limit(err: RateLimitExceeded):
+        api_err = APIError(
+            err.description or "Too many requests",
+            status_code=429,
+            code=DEFAULT_ERROR_CODES.get(429),
+        )
+        return _response(api_err)
+
     @app.errorhandler(APIError)
     def handle_api_error(err: APIError):
-        return err.to_dict(), err.status_code
+        return _response(err)
+
+    @app.errorhandler(HTTPException)
+    def handle_http_error(err: HTTPException):
+        status_code = err.code or 500
+        api_err = APIError(
+            err.description or "An unexpected error occurred.",
+            status_code=status_code,
+            code=DEFAULT_ERROR_CODES.get(status_code),
+        )
+        return _response(api_err)
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(err: Exception):
+        app.logger.exception("Unhandled exception", exc_info=err)
+        api_err = APIError(
+            "An unexpected error occurred.",
+            status_code=500,
+            code=DEFAULT_ERROR_CODES.get(500),
+        )
+        return _response(api_err)
 
     return app
