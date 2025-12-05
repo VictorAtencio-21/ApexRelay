@@ -10,8 +10,10 @@ DEFAULT_ERROR_CODES = {
     401: "unauthorized",
     403: "forbidden",
     404: "not_found",
+    405: "method_not_allowed",
     500: "internal_error",
     502: "bad_gateway",
+    429: "too_many_requests",
 }
 
 

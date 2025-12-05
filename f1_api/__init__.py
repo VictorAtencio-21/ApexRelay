@@ -1,6 +1,7 @@
 # f1_api/__init__.py
 from flask import Flask, jsonify
 from werkzeug.exceptions import HTTPException
+from flask_limiter.errors import RateLimitExceeded
 
 from .config import get_config
 from .extensions import cors, cache, limiter
@@ -43,6 +44,15 @@ def create_app(config_name: str | None = None) -> Flask:
     # Register error handlers
     def _response(err: APIError):
         return jsonify(err.to_dict()), err.status_code
+
+    @app.errorhandler(RateLimitExceeded)
+    def handle_rate_limit(err: RateLimitExceeded):
+        api_err = APIError(
+            err.description or "Too many requests",
+            status_code=429,
+            code=DEFAULT_ERROR_CODES.get(429),
+        )
+        return _response(api_err)
 
     @app.errorhandler(APIError)
     def handle_api_error(err: APIError):
