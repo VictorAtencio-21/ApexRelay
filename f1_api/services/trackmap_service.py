@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .fastf1_client import get_session
+from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
 
 
 def get_track_map(
@@ -19,13 +20,24 @@ def get_track_map(
     - If driver_code is provided, use that driver's fastest lap.
     - Otherwise, use the overall fastest lap in the session.
     """
-    session = get_session(year, round_, session_code)
+    try:
+        session = get_session(year, round_, session_code)
+    except Exception as exc:
+        raise APIError(
+            f"Unable to load session {year} round {round_} ({session_code})",
+            status_code=404,
+            code=DEFAULT_ERROR_CODES.get(404),
+        ) from exc
 
     # Choose which laps to consider
     if driver_code:
         laps = session.laps.pick_driver(driver_code)
         if laps.empty:
-            raise ValueError(f"No laps found for driver {driver_code}")
+            raise APIError(
+                f"No laps found for driver {driver_code}",
+                status_code=404,
+                code="driver_laps_not_found",
+            )
         lap = laps.pick_fastest()
     else:
         # Overall fastest lap in the entire session
@@ -33,10 +45,18 @@ def get_track_map(
 
     # Telemetry for that lap; contains X and Y among other columns
     if lap is None:
-        raise ValueError("No lap found for the specified session/driver")
+        raise APIError(
+            "No lap found for the specified session/driver",
+            status_code=404,
+            code="lap_not_found",
+        )
     tel = lap.get_telemetry()
     if tel is None:
-        raise ValueError("Telemetry is not available for the selected lap")
+        raise APIError(
+            "Telemetry is not available for the selected lap",
+            status_code=404,
+            code="telemetry_unavailable",
+        )
 
     # Convert to plain Python lists for JSON
     x = tel["X"].astype(float).tolist()
