@@ -45,3 +45,21 @@ def test_track_map_for_first_race(client):
     assert "y" in data["polyline"]
     assert len(data["polyline"]["x"]) > 0
     assert len(data["polyline"]["y"]) > 0
+
+
+def test_track_map_rejects_invalid_driver_code(client):
+    resp = client.get("/api/v1/sessions/2024/1/R/track?driver=AA")
+
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["error"]["code"] == "invalid_query_params"
+    assert "driver" in data["error"].get("details", {})
+
+
+def test_track_map_rejects_unexpected_query_params(client):
+    resp = client.get("/api/v1/sessions/2024/1/R/track?foo=bar")
+
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["error"]["code"] == "invalid_query_params"
+    assert "unexpected" in data["error"].get("details", {})

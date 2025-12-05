@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from ...services.events_service import (
     get_current_and_previous_seasons,
     get_season_events,
 )
 from ...services.sessions_service import get_event_with_sessions
+from ...utils.validators import validate_query_params
 
 events_bp = Blueprint("events_bp", __name__)
 
@@ -19,6 +20,7 @@ def seasons_index():
     Return the current and previous seasons.
     Example: { "seasons": [2025, 2024] }
     """
+    validate_query_params(request.args, {})
     seasons = get_current_and_previous_seasons()
     return jsonify({"seasons": seasons})
 
@@ -28,6 +30,7 @@ def season_events(year: int):
     """
     Return the race calendar for a given year.
     """
+    validate_query_params(request.args, {})
     events = get_season_events(year)
     return jsonify({"year": year, "events": events})
 
@@ -37,5 +40,6 @@ def event_detail(year: int, round_: int):
     """
     Return a single event (race weekend) and its sessions.
     """
+    validate_query_params(request.args, {})
     data = get_event_with_sessions(year, round_)
     return jsonify(data)
