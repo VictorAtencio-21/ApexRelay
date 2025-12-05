@@ -8,6 +8,8 @@ from typing import Any
 import fastf1
 import pandas as pd
 
+from ..extensions import cache
+
 from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
 
 
@@ -20,6 +22,7 @@ def get_current_and_previous_seasons() -> list[int]:
     return [current_year, current_year - 1]
 
 
+@cache.memoize()
 def get_season_events(year: int) -> list[dict[str, Any]]:
     """
     Use FastF1 to fetch the race calendar for a given year.

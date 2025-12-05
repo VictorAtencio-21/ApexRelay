@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..extensions import cache
 from .fastf1_client import get_session
 from ..utils.exceptions import APIError
 
@@ -37,6 +38,7 @@ def _safe_str(value) -> str | None:
     return str(value)
 
 
+@cache.memoize()
 def get_session_replay(year: int, round_: int, session_code: str) -> dict[str, Any]:
     """
     Build a lap-based replay dataset for a session.

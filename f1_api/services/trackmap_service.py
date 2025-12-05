@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..extensions import cache
 from .fastf1_client import get_session
 from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
 
 
+@cache.memoize()
 def get_track_map(
     year: int,
     round_: int,

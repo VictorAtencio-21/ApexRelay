@@ -7,6 +7,8 @@ from typing import Any
 import fastf1
 import pandas as pd
 
+from ..extensions import cache
+
 from ..utils.exceptions import APIError, DEFAULT_ERROR_CODES
 
 
@@ -33,6 +35,7 @@ def _map_session_name_to_code(name: str | None) -> str | None:
     return SESSION_NAME_TO_CODE.get(name)
 
 
+@cache.memoize()
 def get_event_with_sessions(year: int, round_: int) -> dict[str, Any]:
     """
     Load a single event (race weekend) and extract its sessions.
